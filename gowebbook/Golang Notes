@@ -1,0 +1,282 @@
+executable and shared library are two types of programs we can write in GO
+alias packages helps in avoiding ambiguity in case of duplicate names
+import( mongo "lib/mongodb/db")
+
+func init() is executed in beginnig, before the func main(), used to initialise global variables, db connections etc
+
+to call only init() of a package, use _ as alias
+
+to import 3rd party packages e.g.
+go get github.com/codegangsta/negroni
+it gets package in $GOPATH/pkg folder, its available to all packages, doesn't require to be installed in each application like in C#
+//rain with ocean -- robbins island
+
+one cool command : go fmt package or individual file:
+formats, indents source code and sorts names of packages imported
+
+godoc "package" >> gives info about package
+godoc -http=:port to run documentation in browser
+
+to store data : array, slice, map
+
+var x [5] int
+x := [5]int{}
+x := [...]int{ elements} # size determined automatically
+
+initialize location specific elements
+x := [5] int{2: 90, 3: 200}
+
+slices are arrays without predefined fixed capacity
+
+slice functions : append(slice, another slice, or individual element or array), returns new slice
+
+append gives new slice by taking exisitng slice and apoend elments in it
+
+copy creates new slice by copying elements from existing slice to another.
+
+maps are like dictionaries in C#
+dict := make(map[string]string)
+dict["go"] = "Golang"
+
+map elements are sorted randomly so don't expect them sorted in order of adding 
+
+keywords : defer, panic, recover
+defer : similar to finally, used to write cleanup code
+
+conjunction with recover to regain control from panicking function
+functions on deferred list are executed in LIFO order
+deferred code is executed after surrounding function returns
+
+panic : stops normal flow of control i.e. current function/code, panicks function, any deferred functions are executedd and calling function gets panick
+value of panic function is passed to defer function.
+recover() is used insided deferred function to recover from panicking function
+
+Error handling : error type returned by Go routines
+e.g. task, err := GetIt(some params)
+if err != nil { handle it}
+
+text/template, http/template
+separate commands by {{ }}
+
+tmpl := ` {{ .field }} `
+t := template.New("name of template") // returns pointer object *Template
+t.Parse(tmpl) and ParseFiles for parsing template file
+t, err := template.ParseGlob("templates/*.tmpl") for parsing all template files
+t.Execute(output to e.g. os.Stdout, data variable)
+
+tmpl := `Notes are : {{ range . }} Title: {{.Field1}}, Description:{{.Field2}} {{end}}`
+
+---Named templates
+t, err := template.New("test").Parse(`{{define "T"}}Hello, {{.}}!{{end}}`)
+err = t.ExecuteTemplate(os.Stdout, "T", "World")
+{{ $varname := value}} to declare variable inside template
+{{range $key, $value := . }} here key and value will be successive elements for each iteration
+
+Pipes:= to redirect output from one command/pipe to next in line
+{{ eq $a $b | if }} a and b are equal {{end}}
+
+template definition file used for generating all pages
+template.Must() parses the template file and panicks in case of error
+
+http.Request -> r.ParseForm(), r.PostFormValue()
+strconv.Itoa(id) -> num to string
+
+
+Http middleware : used for implementing common/shared functionality across multiple handlers 
+e.g. logging similar to filters in ASP.NET
+Middleware is pluggable and self-contained piece of code wrapping web app, used
+for implementing shared behaviours in HTTP request handlers, plugged in request
+handling cycle, execute before/after http request handler
+
+other use cases : 
+compress http response, common response header, db session objects,
+implement security, validating authentication credentials
+
+net/http => functions StripPrefix and TimeoutHandler functions , similar to middleware,
+these wrap request handlers and provide additional implementation in request handling cycle
+Both take http.Handler as parameter, return http.Handler 
+StripPrefix(pattern, handler), removes prefix pattern from request URL
+
+To write Http Middleware:
+1. write function that takes http.Handler as argument and returns http.Handler
+it can be any http.Handler or other middleware handler, call using ServeHTTP
+2. you can pass parameters as needed. ServeMux can be used to to register this handler
+
+func middlewareHander(next http.Handler) http.Handler{
+	return http.HandlerFunc(func(w http.ResponseWrite, r *http.Request)){
+		//logic before executing app handler
+		next.ServeHTTP(w, r)
+		//logic after executing app handler
+	})
+}
+
+ServeMux -> multiplrexor like route config in C#
+Handler -> like controller in C#
+Handler is any type  that satisfies implementation of http.Handler interface
+
+type Hanlder interface{
+	ServeHttp(ResponseWriter, *Request)
+	//ResponseWriter writes output to response
+	//Request access incoming request
+}
+some functions  that implement http.Hanlders are 
+FileServer, NotFoundHandler, RedirectHandler, StripPrefix, TimeoutHandler
+
+http.HandlerFunc(functionName) , functionName has signature(ResponseWrite, Request)
+
+or 
+func messageHandler(message string) http.Handler{
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
+			fmt.Fprintf(w, message)
+		})
+}
+
+or .
+func messageHandler(w http.ResponseWriter, r *http.Request){
+	fmt.Fprintf(w, "Morning, welcome to Go Web Dev")
+}
+mux.HandleFunc("/welcome", messageHandler)
+
+defaultsevemux:
+http.HandleFunc("/welcome", messageHandler)
+http.ListenAndServe(":8080", nil)
+
+http.Server struct - allows to specify handler, timeouts, address, tlsconfig, error log etc
+server := &http.Server{
+	Addr : ":8080",
+	ReadTimeout: 20 * time.Second,
+	WriteTimeout: 20 * time.Second,
+	MaxHeaderBytes : 1 << 20,
+}
+server.ListenAndServe()
+GorillaMux 
+mux.Vars(r) --> gives variables values passed in request object
+
+---------------------------
+http/template -- templating, generating views
+
+Writing loggin Handler :
+func loggingHandler(next http.Handler) http.Handler{
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
+			start := time.Now()
+			log.Printf("Started %s %s", r.Method, r.URL.Path)
+			next.ServeHTTP(w, r)
+			log.Printf("Completed %s in %v", r.URL.Path, time.Since(start))
+		})
+}
+func index(w http.ResponseWriter, r *http.Request){
+	log.Println("Executing Index handler")
+	fmt.Fprintf(w, "Welcome!")
+}
+indexHandler := http.HandlerFunc(index)
+http.Handle("/", loggingHandler(indexHandler))
+-
+Chaining handler middlewares : 
+http.Handle("/",middlewareFirst(middlewareSecond(http.HandlerFunc(index))))
+
+-----Authentication/Authorization
+Authenticate:- user is valid
+Authorize: what user is allowed to do
+once authneticated, user must be kept logged in for subsequent requests till itmeout.
+Session/Cookies or token based approach are two alternatives - token for API and session/cookie for web apps
+
+Cookie based authentication :- cookies used to authenticate on each request
+Set-Cookie: session=AuthCookie first response
+second onward request Cookie:session=AuthCookie
+
+Token based authentication : after authorization against db, system generated token
+ is generated and sent with HTTP Authorization headers  as a bearer token that can
+ be validated at web server
+ first req response is token, next request -> Authorization: Bearer 'AccessToken'
+
+ Token based auth : 
+ 1. authenticate using user name/password or client id and secret key
+ 2. auth success, web server generates access token to be used in subsequent requests
+ token is sent as part of http header
+
+ JSON Web Tokens: JWT - is open standard for generating & using bearer tokens for authentication between 2 parties. Its compact, URL-safe way of representing claims between 2 parties. Claims are JSON encoded object digitally signed using JSON web signature JWS. A JWT token is x.y.z i.e. 3 parts
+ 1st part - Header is JSON object that has been base64url-encoded, 2 part contains claims conveyed by JWT and last one is signature , verified with info given in header
+
+ Generating public/private key
+ openssl genrsa -out app.rsa 1024
+openssl rsa -in app.rsa -pubout > app.rsa.pub
+
+Persisting data in MongoDb
+1. mgo package from gopkg.in/mgo.v2
+2. use Dial function to obtain connection mgo.Dial("localhost"), or you can connect to cluster of mongo servers
+e.g. conn, err := mgo.Dial("server1, server2")
+DialInfo and DialWithInfo to customize connection parameters for establishing session
+Consistency Modes : Eventual, Monotonic, Strong
+mgo.Session handles pool of connections to MongoDB
+SetMode to change consistency mode
+defer session.Close() to close session after work is done
+
+session.DB("taskdb").C("categories") <-- creates collection categories *mgo.Database
+represents named db creted by Session.DB("dbname") method
+
+Insert() method of mgo serialized struct as BSON object before storing in MongoDB
+provide _id field to new object being inserted using bson.NewObjectId()
+
+map and document slices bson.D(), bson document of ordered elements
+embedding document or making reference in child document for relationship setup in mongodb
+
+Find() method of collection allows go read data, pass document you want to find
+to get all documnets use bson.M{}, returns value of mgo.Query type
+use One, For, Iter, Tail to access objects
+collection.Find(nil) << get all records
+collection.Find(nil).Sort(field) to sort documents by specified fields
+collection.Find(nil).Sort(-field) to sort documents by specified fields in descending order
+
+FindId() to find object by id
+
+Update document 
+func (c *Collection) Update(selector interface{}, update interface{}) error
+find object matching selector and update with passed update document
+$set to do partial updates
+
+Delete single document
+func (c *Collection) Remove(selector interface{}) error
+
+To remove all documents matching criteria
+func (c *Collection) RemoveAll(selector interface{}) (info *ChangeInfo, err error)
+
+Manage sessions :
+New, Clone,Copy enable connection pooling
+Copy method preserves authentication 
+Clone preserves port info
+
+RESTful APIs :
+Roy Fielding's six constraints 
+1) Uniform interface 
+2) Stateless
+3) Cacheable
+4) Client-server
+5) Layered system
+6) Code on demand(optional)
+
+Key abstraction of information in REST is a resource, any info that can be named can be a resource.
+e.g. an image, a file, a db record
+Resource is a conceptual mapping to a set of entities, not the entity that corresponds to the mapping at any particular point in time.
+
+Microservices Architecture : loosely coupled software services are developed and apps are developed by consuming these services
+
+Mapping resources with application routes
+actions Register/Login don't need to call authorization
+
+--Generate private key
+openssl genrsa -out app.rsa 1024
+
+How to add index to mongo collection:
+noteIndex := mgo.Index{
+		Key: []string{"taskid"},
+		Unique: false,
+		Background: true,
+		Sparse: true
+	}
+err = userCol.EnsureIndex(userIndex)
+userCol := session.DB(AppConfig.Database).C("users")
+to add middleware to specific routs -> chaining basically
+router.PathPrefix("/tasks").Handler(negroni.New(
+        negroni.HandlerFunc(common.Authorize),
+        negroni.Wrap(taskRouter),
+    ))

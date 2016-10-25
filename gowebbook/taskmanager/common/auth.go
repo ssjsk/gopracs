@@ -5,8 +5,12 @@ import(
 	"log"
 	"net/http"
 	"time"
+	"fmt"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/dgrijalva/jwt-go/request"
+	"crypto/rsa"
+
+
 )
 
 //using asymmetric crypto/RSA keys
@@ -65,8 +69,8 @@ func initKeys(){
 //Generate JWT token
 func GenerateJWT(name, role string)(string, error){
 	claims := AppClaims{
-		user.UserName, 
-		"admin",
+		name, 
+		role,
 		jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Minute * 20).Unix(),
 			Issuer: "admin",

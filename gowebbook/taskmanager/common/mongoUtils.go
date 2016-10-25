@@ -2,6 +2,8 @@ package common
 
 import(
 	"gopkg.in/mgo.v2"
+	"log"
+	"time"
 )
 
 var session *mgo.Session
@@ -10,7 +12,7 @@ func GetSession() *mgo.Session {
 	if session == nil{
 		var err error
 		session, err = mgo.DialWithInfo(&mgo.DialInfo{
-			Addr: []string{AppConfig.MongoDBHost},
+			Addrs: []string{AppConfig.MongoDBHost},
 			Username: AppConfig.DBUser,
 			Password: AppConfig.DBPwd,
 			Timeout: 60 * time.Second,
@@ -25,7 +27,7 @@ func GetSession() *mgo.Session {
 func createDbSession(){
 	var err error
 	session, err = mgo.DialWithInfo(&mgo.DialInfo{
-		Addr: []string{AppConfig.MongoDBHost},
+		Addrs: []string{AppConfig.MongoDBHost},
 		Username: AppConfig.DBUser,
 		Password: AppConfig.DBPwd,
 		Timeout: 60 * time.Second,
@@ -56,7 +58,7 @@ func addIndexes(){
 		Key: []string{"taskid"},
 		Unique: false,
 		Background: true,
-		Sparse: true
+		Sparse: true,
 	}
 	//Add indexes to MongoDB
 	session := GetSession().Copy()

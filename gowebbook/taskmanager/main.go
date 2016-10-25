@@ -1,14 +1,15 @@
 package main
 
-import(
+import (
+	"github.com/codegangsta/negroni"
 	"log"
 	"net/http"
-	"github.com/codegangsta/negroni"
 
 	"github.com/ssjsk/gowebbook/taskmanager/common"
 	"github.com/ssjsk/gowebbook/taskmanager/routers"
 )
-func main(){
+
+func main() {
 	//Startup
 	common.Startup()
 
@@ -18,11 +19,11 @@ func main(){
 	//Create a negroni instance
 	n := negroni.Classic()
 	n.UseHandler(router)
-
+	log.Println(common.AppConfig.Server)
 	server := &http.Server{
-		Addr: common.AppConfig.Server,
+		Addr:    common.AppConfig.Server,
 		Handler: n,
 	}
 	log.Println("Listening...")
-	server.ListenAndServ()
+	server.ListenAndServe()
 }

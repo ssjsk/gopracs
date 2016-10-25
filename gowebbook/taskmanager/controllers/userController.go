@@ -27,7 +27,7 @@ func Register(w http.ResponseWriter, r *http.Request){
 	user := &dataResource.Data
 	context := NewContext()
 	defer context.Close()
-	c := &data.DbCollection("users")
+	c := context.DbCollection("users")
 	repo := &data.UserRepository{c}
 	//Insert user document
 	repo.CreateUser(user)
@@ -67,34 +67,25 @@ func Login(w http.ResponseWriter, r *http.Request){
 	loginModel := dataResource.Data
 	loginUser := models.User{
 		Email: loginModel.Email,
-		password: loginModel.Password,
+		Password: loginModel.Password,
 	}
 	context := NewContext()
 	defer context.Close()
 	c := context.DbCollection("users")
-	repo := &data.UserRepository{c}
+	repo := &data.UserRepository{C: c}
 	//Authenticate logged in user
-	if user, err := repo.Login(loginUser); err != nil{
-		common.DisplayAppError(
-			w,
-			err,
-			"Invalid login credentials",
-			401,
-		)
+	user, err := repo.Login(loginUser)
+	if err != nil{
+		common.DisplayAppError(w, err, "Invalid login credentials", 401,)
 		return
-	} else { //successful login
-		//Generate JWT token
-		token, err = common.GenerateJWT(user.Email, "member")
-		if err != nil {
-			common.DisplayAppError(
-				w,
-				err,
-				"Error while generating access token",
-				500,
-			)
-			return
-		}
+	} 
+	//Generate JWT token
+	token, err = common.GenerateJWT(user.Email, "member")
+	if err != nil {
+		common.DisplayAppError(w, err, "Error while generating access token", 500,)
+		return
 	}
+	
 	w.Header().Set("Content-Type","application/json")
 	user.HashPassword = nil
 	authUser := AuthUserModel{

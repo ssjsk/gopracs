@@ -32,14 +32,14 @@ func CreateNote(w http.ResponseWriter, r *http.Request){
 	defer context.Close()
 	col := context.DbCollection("notes")
 	//Insert a note document
-	repo := &data.NotesRepository{C: col}
+	repo := &data.NoteRepository{C: col}
 	repo.Create(note)
 	j, err := json.Marshal(note)
 	if err != nil {
 		common.DisplayAppError(w, err,"An unexpected error has occurred", 500)
 		return
 	}
-	w.Header.Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(j)
 }
@@ -54,7 +54,7 @@ func GetNotesByTask(w http.ResponseWriter, r *http.Request){
 	col := context.DbCollection("notes")
 	repo := &data.NoteRepository{C: col}
 	notes := repo.GetByTask(id)
-	j, err := json.Marshal(NottesRepository{Data: notes})
+	j, err := json.Marshal(NotesResource{Data: notes})
 	if err != nil {
 		common.DisplayAppError(w, err, "An unexpected error has occurred", 500)
 		return

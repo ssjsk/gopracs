@@ -2,13 +2,14 @@ package controllers
 
 import(
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/ssjsk/gowebbook/taskmanager/data"
+	
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"github.com/ssjsk/gowebbook/taskmanager/common"
+	"github.com/ssjsk/gowebbook/taskmanager/data"
 )
 
 //handler for http posts - "/tasks"
@@ -26,7 +27,7 @@ func CreateTask(w http.ResponseWriter, r *http.Request){
 		)
 		return
 	}
-	task := &dataResource.data
+	task := &dataResource.Data
 	context := NewContext()
 	defer context.Close()
 	c := context.DbCollection("tasks")
@@ -55,7 +56,7 @@ func GetTasks(w http.ResponseWriter, r *http.Request){
 	c := context.DbCollection("task")
 	repo := &data.TaskRepository{c}
 	tasks := repo.GetAll()
-	j, err := json.Marshal(TaskResource{Data: tasks})
+	j, err := json.Marshal(TasksResource{Data: tasks})
 	if err != nil{
 		common.DisplayAppError(
 			w,
@@ -78,8 +79,8 @@ func GetTaskById(w http.ResponseWriter, r *http.Request){
 	id := vars["id"]
 	context := NewContext()
 	defer context.Close()
-	c := context.DbCollection("tasks")
-	repo := &data.TaskRepository{c}
+	col := context.DbCollection("tasks")
+	repo := &data.TaskRepository{C: col}
 	task, err := repo.GetById(id)
 	if err != nil {
 		if err == mgo.ErrNotFound{
@@ -121,7 +122,7 @@ func GetTasksByUser(w http.ResponseWriter, r *http.Request){
 	c := context.DbCollection("task")
 	repo := &data.TaskRepository{c}
 	tasks := repo.GetByUser(user)
-	j, err := json.Marshal(TaskResource{Data: tasks})
+	j, err := json.Marshal(TasksResource{Data: tasks})
 	if err != nil {
 		common.DisplayAppError(
 			w,

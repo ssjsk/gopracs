@@ -1,9 +1,9 @@
 package data
 import(
 	"time"
-	"github.com/ssjsk/gowebbook/taskmanager/models"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"github.com/ssjsk/gowebbook/taskmanager/models"
 )
 
 type TaskRepository struct{
@@ -46,7 +46,10 @@ func (r *TaskRepository) GetAll() []models.Task{
 	}
 	return tasks
 }
-
+func (r *TaskRepository) GetById(id string) (task models.Task, err error) {
+	err = r.C.FindId(bson.ObjectIdHex(id)).One(&task)
+	return
+}
 func (r *TaskRepository) GetByUser(user string) []models.Task{
 	var tasks []models.Task
 	iter := r.C.Find(bson.M{"createdby": user}).Iter()

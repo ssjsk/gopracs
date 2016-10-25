@@ -1,13 +1,11 @@
-package common
+package controllers
 
-import(
-	"encoding/json"
-	"log"
-	"net/http"
+import (
+	"github.com/ssjsk/gowebbook/taskmanager/models"
 )
 
 type(
-	appError struct{
+	/*appError struct{
 		Error string `json:"error"`
 		Message string `json:"message"`
 		HttpStatus int `json:"status"`
@@ -15,7 +13,7 @@ type(
 	errorResource struct{
 		Data appError `json:"data"`
 	}
-
+	*/
 	//For post - /user/register
 	UserResource struct{
 		Data models.User `json:"data"`
@@ -32,7 +30,7 @@ type(
 	}
 
 	//Model for authentication
-	LogoinModel struct{
+	LoginModel struct{
 		Email string `json:"email"`
 		Password string `json:"password"`
 	}
@@ -60,7 +58,7 @@ type(
 
 	//For Get /notes
 	//For /notes/tasks/id
-	NoteResource struct {
+	NotesResource struct {
 		Data []models.TaskNote `json:"data"`
 	}
 
@@ -71,7 +69,7 @@ type(
 	}
 )
 
-func DisplayAppError(w http.ResponseWriter, handlerError error, message string, code int){
+/*func DisplayAppError(w http.ResponseWriter, handlerError error, message string, code int){
 	errObj := appError{
 		Error: handlerError.Error(),
 		Message: message,
@@ -83,4 +81,4 @@ func DisplayAppError(w http.ResponseWriter, handlerError error, message string, 
 	if j, err := json.Marshal(errorResource{Data: errObj}); err == nil{
 		w.Write(j)
 	}
-}
+}*/
